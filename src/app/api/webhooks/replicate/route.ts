@@ -95,7 +95,7 @@ async function triggerNextSticker(request: NextRequest, projectId: string) {
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
                      status: 'succeeded',
-                     output: `https://placehold.co/512x512/fdfdfd/333333.png?text=${encodeURIComponent(nextTask.action_name)}`
+                     output: `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', cute line sticker style, vector, white background')}?width=512&height=512&nologo=true&seed=${Math.floor(Math.random() * 10000)}`
                  })
              }).catch(console.error);
           } else {
