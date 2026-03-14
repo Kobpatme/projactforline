@@ -21,20 +21,31 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const image = formData.get('image') as File | null;
 
+    console.log('--- Generation Request Start ---');
+    console.log('Image received:', image ? `${image.name} (${image.size} bytes)` : 'None');
+
     if (!image) {
+      console.error('Validation Error: No image file provided');
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
     }
 
     // 1. Upload source image to Supabase Storage
     const fileName = `${Date.now()}-${image.name}`;
+    console.log('Uploading to Supabase Storage: source-images/', fileName);
+    
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('source-images')
       .upload(fileName, image);
 
     if (uploadError) {
-      console.error('Storage Upload Error:', uploadError);
-      return NextResponse.json({ error: 'Failed to upload source image' }, { status: 500 });
+      console.error('Supabase Storage Upload Error:', uploadError);
+      return NextResponse.json({ 
+        error: 'Failed to upload source image',
+        details: uploadError.message 
+      }, { status: 500 });
     }
+    
+    console.log('Upload successful:', uploadData.path);
 
     const { data: { publicUrl: sourceImageUrl } } = supabase.storage
       .from('source-images')
@@ -47,15 +58,19 @@ export async function POST(request: NextRequest) {
       .insert({
         source_image_url: sourceImageUrl,
         status: 'processing',
-        // user_id will need to be handled by auth in Phase 3
       })
       .select()
       .single();
 
     if (projectError) {
-      console.error('DB Project Error:', projectError);
-      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+      console.error('Supabase Database Error (Project):', projectError);
+      return NextResponse.json({ 
+        error: 'Failed to create project record',
+        details: projectError.message 
+      }, { status: 500 });
     }
+
+    console.log('Project created ID:', projectData.id);
 
     const projectId = projectData.id;
 
