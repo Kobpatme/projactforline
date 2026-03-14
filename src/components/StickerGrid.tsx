@@ -54,9 +54,9 @@ export default function StickerGrid({ projectId, onReset }: ActiveStickerGridPro
       if (error) {
         console.error('Fetch error:', error);
       } else if (data) {
-        setResults(data);
+        setResults(data as StickerResult[]);
         // If all 10 stickers have image_urls, we're done
-        if (data.length === 10 && data.every(r => r.image_url)) {
+        if (data.length === 10 && (data as StickerResult[]).every(r => r.image_url)) {
           setIsLoading(false);
         }
       }
@@ -73,8 +73,8 @@ export default function StickerGrid({ projectId, onReset }: ActiveStickerGridPro
         .order('order_index', { ascending: true });
 
       if (!error && data) {
-        setResults(data);
-        if (data.length === 10 && data.every(r => r.image_url)) {
+        setResults(data as StickerResult[]);
+        if (data.length === 10 && (data as StickerResult[]).every(r => r.image_url)) {
           setIsLoading(false);
           clearInterval(intervalId);
         }
