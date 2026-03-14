@@ -79,9 +79,10 @@ async function triggerNextSticker(request: NextRequest, projectId: string) {
       if (nextActionDef) {
           const prompt = buildStickerPrompt(nextActionDef);
           
-          const protocol = request.headers.get('x-forwarded-proto') || 'https';
-          const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-          const baseUrl = `${protocol}://${host}`;
+          // Use the explicit app URL if provided (best for production), otherwise fallback to headers
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (
+            `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host') || request.headers.get('host')}`
+          );
           
           const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(nextTask.action_name)}`;
 

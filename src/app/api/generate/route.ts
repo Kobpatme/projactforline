@@ -98,9 +98,10 @@ export async function POST(request: NextRequest) {
     // This starts the "Webhook Daisy Chain". The webhook will trigger the next one.
     
     // Set up webhook URL
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    // Use the explicit app URL if provided (best for production), otherwise fallback to headers
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (
+      `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host') || request.headers.get('host')}`
+    );
 
     const firstAction = selectedActions[0];
     const prompt = buildStickerPrompt(firstAction);
