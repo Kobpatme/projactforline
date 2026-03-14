@@ -1,5 +1,6 @@
 // ============================================
 // LINE Sticker Generator — Supabase Client
+// Note: NEXT_PUBLIC_ variables are inlined at build time.
 // ============================================
 
 import { createClient } from '@supabase/supabase-js';
