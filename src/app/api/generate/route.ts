@@ -141,8 +141,11 @@ export async function POST(request: NextRequest) {
       projectId: projectId,
       message: 'Generation started. 10 stickers are being created.',
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Generate API Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || 'Unknown error'
+    }, { status: 500 });
   }
 }
