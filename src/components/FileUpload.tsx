@@ -82,7 +82,8 @@ export default function FileUpload({ onGenerateSuccess }: FileUploadProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start generation');
+        console.error('API Error Response:', data);
+        throw new Error(data.details || data.error || 'Failed to start generation');
       }
 
       onGenerateSuccess(data.projectId);
