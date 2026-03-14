@@ -35,6 +35,13 @@ export function pickRandomActions(count: number = 10): StickerAction[] {
 }
 
 /**
+ * Finds a specific action by its name.
+ */
+export function getActionByName(name: string): StickerAction | undefined {
+  return STICKER_ACTIONS.find(a => a.name === name);
+}
+
+/**
  * Generates the full AI prompt for a specific sticker action.
  * Uses the user's specified base style.
  */

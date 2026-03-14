@@ -94,42 +94,35 @@ export async function POST(request: NextRequest) {
       console.error('DB Results Error:', resultsError);
     }
 
-    // 4. Trigger Replicate Predictions (Non-blocking / Background)
-    // We trigger them all and the client will poll for changes in 'sticker_results'
-    // Specifically using fofr/instant-id which is excellent for face-to-illustration
+    // 4. Trigger Replicate Prediction for the FIRST action only
+    // This starts the "Webhook Daisy Chain". The webhook will trigger the next one.
     
     // Set up webhook URL
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    for (const action of selectedActions) {
-      const prompt = buildStickerPrompt(action);
+    const firstAction = selectedActions[0];
+    const prompt = buildStickerPrompt(firstAction);
       
-      // We don't await here to keep the API response fast, 
-      // but we need a way to update the database when done.
-      // Replicate Webhooks are better, but for this simple setup we'll trigger them
-      // and have a background listener or just poll.
-      
-      const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(action.name)}`;
-      console.log(`Triggering specific action: ${action.name} with webhook: ${webhookUrl}`);
+    const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(firstAction.name)}`;
+    console.log(`Starting Sequence. Triggering FIRST action: ${firstAction.name} with webhook: ${webhookUrl}`);
 
-      replicate.predictions.create({
-        version: "zsxkib/instant-id:06652496a4146a47a166299d91f4b8801d0a5f973715d18e8073b64bc95f590a", // Example ID for InstantID
-        input: {
-          image: sourceImageUrl,
-          prompt: prompt,
-          negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
-          style_name: "Watercolor", // Gives a nice sticker look
-          adapter_strength_ratio: 0.8,
-          identity_net_strength_ratio: 0.8,
-        },
-        webhook: webhookUrl,
-        webhook_events_filter: ["completed"]
-      }).catch(err => {
-        console.error(`Replicate Error for ${action.name}:`, err);
-      });
-    }
+    replicate.predictions.create({
+      version: "zsxkib/instant-id:06652496a4146a47a166299d91f4b8801d0a5f973715d18e8073b64bc95f590a", 
+      input: {
+        image: sourceImageUrl,
+        prompt: prompt,
+        negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
+        style_name: "Watercolor", 
+        adapter_strength_ratio: 0.8,
+        identity_net_strength_ratio: 0.8,
+      },
+      webhook: webhookUrl,
+      webhook_events_filter: ["completed"]
+    }).catch(err => {
+      console.error(`Replicate Error for ${firstAction.name}:`, err);
+    });
 
     return NextResponse.json({
       success: true,
