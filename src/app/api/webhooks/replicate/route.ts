@@ -88,7 +88,7 @@ async function triggerNextSticker(request: NextRequest, projectId: string) {
 
           // Trigger next replicate
           await replicate.predictions.create({
-            version: "zsxkib/instant-id:06652496a4146a47a166299d91f4b8801d0a5f973715d18e8073b64bc95f590a", 
+            version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 
             input: {
               image: project.source_image_url,
               prompt: prompt,
