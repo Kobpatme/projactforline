@@ -109,21 +109,34 @@ export async function POST(request: NextRequest) {
     const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(firstAction.name)}`;
     console.log(`Starting Sequence. Triggering FIRST action: ${firstAction.name} with webhook: ${webhookUrl}`);
 
-    replicate.predictions.create({
-      version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 
-      input: {
-        image: sourceImageUrl,
-        prompt: prompt,
-        negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
-        style_name: "Watercolor", 
-        adapter_strength_ratio: 0.8,
-        identity_net_strength_ratio: 0.8,
-      },
-      webhook: webhookUrl,
-      webhook_events_filter: ["completed"]
-    }).catch(err => {
-      console.error(`Replicate Error for ${firstAction.name}:`, err);
-    });
+    if (process.env.MOCK_MODE === 'true') {
+      console.log(`MOCK MODE: Simulating FIRST action: ${firstAction.name}...`);
+      // Dispatch the mock webhook asynchronously without blocking the client response
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'succeeded',
+          output: `https://placehold.co/512x512/fdfdfd/333333.png?text=${encodeURIComponent(firstAction.name)}`
+        })
+      }).catch(err => console.error('Mock Webhook Error:', err));
+    } else {
+      replicate.predictions.create({
+        version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 
+        input: {
+          image: sourceImageUrl,
+          prompt: prompt,
+          negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
+          style_name: "Watercolor", 
+          adapter_strength_ratio: 0.8,
+          identity_net_strength_ratio: 0.8,
+        },
+        webhook: webhookUrl,
+        webhook_events_filter: ["completed"]
+      }).catch(err => {
+        console.error(`Replicate Error for ${firstAction.name}:`, err);
+      });
+    }
 
     return NextResponse.json({
       success: true,
