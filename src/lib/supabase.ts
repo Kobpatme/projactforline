@@ -15,7 +15,11 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
       }
     })
   : new Proxy({} as any, {
-      get: () => {
-        throw new Error('Supabase client accessed but NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing.');
+      get: (target, prop) => {
+        const missing = [];
+        if (!supabaseUrl) missing.push('NEXT_PUBLIC_SUPABASE_URL');
+        if (!supabaseAnonKey) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY');
+        
+        throw new Error(`Supabase client accessed but keys are missing: ${missing.join(', ')}`);
       }
     });
