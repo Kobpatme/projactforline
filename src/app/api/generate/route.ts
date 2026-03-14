@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'succeeded',
-          output: `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', cute line sticker style, vector, white background')}?width=512&height=512&nologo=true&seed=${Math.floor(Math.random() * 10000)}`
+          output: `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(firstAction.name)}`
         })
       }).catch(err => console.error('Mock Webhook Error:', err));
     } else {
