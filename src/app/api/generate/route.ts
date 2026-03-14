@@ -97,6 +97,12 @@ export async function POST(request: NextRequest) {
     // 4. Trigger Replicate Predictions (Non-blocking / Background)
     // We trigger them all and the client will poll for changes in 'sticker_results'
     // Specifically using fofr/instant-id which is excellent for face-to-illustration
+    
+    // Set up webhook URL
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     for (const action of selectedActions) {
       const prompt = buildStickerPrompt(action);
       
@@ -105,6 +111,9 @@ export async function POST(request: NextRequest) {
       // Replicate Webhooks are better, but for this simple setup we'll trigger them
       // and have a background listener or just poll.
       
+      const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(action.name)}`;
+      console.log(`Triggering specific action: ${action.name} with webhook: ${webhookUrl}`);
+
       replicate.predictions.create({
         version: "zsxkib/instant-id:06652496a4146a47a166299d91f4b8801d0a5f973715d18e8073b64bc95f590a", // Example ID for InstantID
         input: {
@@ -115,22 +124,8 @@ export async function POST(request: NextRequest) {
           adapter_strength_ratio: 0.8,
           identity_net_strength_ratio: 0.8,
         },
-        // In a real app, use webhooks here:
-        // webhook: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/replicate?projectId=${projectId}&action=${action.name}`
-      }).then(async (prediction) => {
-        // Simple polling/waiting logic within the background promise for demo purposes
-        // Ideally, Replicate Webhooks would update the database.
-        let result = await replicate.wait(prediction);
-        if (result.status === 'succeeded' && result.output) {
-          const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-          
-          // Update sticker_results with the generated image URL
-          await supabase
-            .from('sticker_results')
-            .update({ image_url: imageUrl })
-            .eq('project_id', projectId)
-            .eq('action_name', action.name);
-        }
+        webhook: webhookUrl,
+        webhook_events_filter: ["completed"]
       }).catch(err => {
         console.error(`Replicate Error for ${action.name}:`, err);
       });
