@@ -110,16 +110,26 @@ export async function POST(request: NextRequest) {
     console.log(`Starting Sequence. Triggering FIRST action: ${firstAction.name} with webhook: ${webhookUrl}`);
 
     if (process.env.MOCK_MODE === 'true') {
-      console.log(`MOCK MODE: Simulating FIRST action: ${firstAction.name}...`);
-      // Dispatch the mock webhook asynchronously without blocking the client response
-      fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'succeeded',
-          output: `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(firstAction.name)}`
-        })
-      }).catch(err => console.error('Mock Webhook Error:', err));
+      console.log(`MOCK MODE: Populating all 10 stickers synchronously to prevent Vercel suspension...`);
+      
+      const mockUpdates = selectedActions.map(action => ({
+        project_id: projectId,
+        action_name: action.name,
+        // Insert standard Dicebear mock image
+        image_url: `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(action.name)}`
+      }));
+
+      // Update all 10 stickers sequentially (or via bulk if upsert allowed) to simulate finished callbacks
+      for (const update of mockUpdates) {
+        await supabase
+          .from('sticker_results')
+          .update({ image_url: update.image_url })
+          .eq('project_id', update.project_id)
+          .eq('action_name', update.action_name);
+      }
+
+      await supabase.from('sticker_projects').update({ status: 'completed' }).eq('id', projectId);
+      console.log(`MOCK MODE: Completed. Database perfectly staged for UI display.`);
     } else {
       replicate.predictions.create({
         version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 

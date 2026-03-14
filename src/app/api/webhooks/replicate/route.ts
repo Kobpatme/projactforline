@@ -86,34 +86,20 @@ async function triggerNextSticker(request: NextRequest, projectId: string) {
           
           const webhookUrl = `${baseUrl}/api/webhooks/replicate?projectId=${projectId}&actionName=${encodeURIComponent(nextTask.action_name)}`;
 
-          if (process.env.MOCK_MODE === 'true') {
-             console.log(`MOCK MODE: Delaying 3s to simulate generation time for ${nextTask.action_name}...`);
-             await new Promise(resolve => setTimeout(resolve, 3000));
-
-             fetch(webhookUrl, {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({
-                     status: 'succeeded',
-                     output: `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(nextTask.action_name)}`
-                 })
-             }).catch(console.error);
-          } else {
-            // Trigger next replicate
-            await replicate.predictions.create({
-              version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 
-              input: {
-                image: project.source_image_url,
-                prompt: prompt,
-                negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
-                style_name: "Watercolor", 
-                adapter_strength_ratio: 0.8,
-                identity_net_strength_ratio: 0.8,
-              },
-              webhook: webhookUrl,
-              webhook_events_filter: ["completed"]
-            });
-          }
+          // Trigger next replicate
+          await replicate.predictions.create({
+            version: "fofr/instant-id:80321287eeba72bafeaaf4531be3eb71e21b777a80b192ea6daee041db9fb99e", 
+            input: {
+              image: project.source_image_url,
+              prompt: prompt,
+              negative_prompt: "realistic, photo, 3d, noise, messy, low quality",
+              style_name: "Watercolor", 
+              adapter_strength_ratio: 0.8,
+              identity_net_strength_ratio: 0.8,
+            },
+            webhook: webhookUrl,
+            webhook_events_filter: ["completed"]
+          });
           console.log(`Triggered NEXT sequence in chain for: ${nextTask.action_name}`);
       }
   } else {
